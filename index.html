@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق جدول التمارين الرياضية</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #22c55e;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 { font-size: 1.5rem; color: #60a5fa; }
+        .days-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .day-btn {
+            background-color: var(--card-bg);
+            border: 2px solid #334155;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+        .day-btn.active {
+            background-color: var(--primary-color);
+            border-color: #60a5fa;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: #38bdf8;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 5px;
+        }
+        .exercise-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .exercise-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        .exercise-details {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+        .timer-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #090d16;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .btn-timer {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        /* مؤقت الراحة الشامل */
+        #global-timer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-top: 3px solid var(--accent-color);
+            padding: 15px;
+            text-align: center;
+            display: none;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        #timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>💪 جدول التمارين الرياضية (دفعة، سحب، جسم كامل)</h1>
+    </header>
+
+    <div class="days-container">
+        <button class="day-btn active" onclick="switchDay(1)">اليوم 1: دفع وأرجل أمامي</button>
+        <button class="day-btn" onclick="switchDay(2)">اليوم 2: سحب وأرجل خلفي</button>
+        <button class="day-btn" onclick="switchDay(3)">اليوم 3: جسم كامل ومرونة</button>
+    </div>
+
+    <div id="workout-content"></div>
+
+    <!-- مؤقت الراحة العائم -->
+    <div id="global-timer">
+        <div>وقت الراحة المتبقي:</div>
+        <div id="timer-display">00:00</div>
+        <button class="btn-timer" style="background-color: #ef4444; margin-top: 5px;" onclick="stopTimer()">إلغاء المؤقت</button>
+    </div>
+
+    <script>
+        const workoutData = {
+            1: {
+                calisthenics: [
+                    { name: "ضغط عادي (Push-ups)", sets: "3 مجموعات × 15-20 تكرار", rest: 45 },
+                    { name: "ضغط مائل (قدم مرتفعة)", sets: "3 مجموعات × 10-12 تكرار", rest: 45 },
+                    { name: "بلانك (Plank)", sets: "3 مجموعات × 45-60 ثانية", rest: 45 }
+                ],
+                gym: [
+                    { name: "سكوَات بالبار (Barbell Squat)", sets: "4 مجموعات × 8-10 تكرارات", rest: 90 },
+                    { name: "بنش برَس بالبار (Bench Press)", sets: "4 مجموعات × 8-10 تكرارات", rest: 90 },
+                    { name: "ضغط أكتاف بالدمبل (Shoulder Press)", sets: "3 مجموعات × 8-12 تكرار", rest: 60 },
+                    { name: "رفرفة جانبية (Lateral Raise)", sets: "3 مجموعات × 12-15 تكرار", rest: 45 },
+                    { name: "تراي بوشداون بالكابل", sets: "3 مجموعات × 10-12 تكرار", rest: 45 },
+                    { name: "بطن: رفع أرجل معلق (Hanging Leg Raise)", sets: "3 مجموعات × 12-15 تكرار", rest: 45 }
+                ]
+            },
+            2: {
+                calisthenics: [
+                    { name: "عقلة (Pull-ups) أو مساعدة", sets: "4 مجموعات × 5-8 تكرارات", rest: 90 },
+                    { name: "عقلة قبضة ضيقة (Chin-ups)", sets: "3 مجموعات × 6-8 تكرارات", rest: 60 },
+                    { name: "جسر الظهر (Superman)", sets: "3 مجموعات × 12 تكرار", rest: 45 }
+                ],
+                gym: [
+                    { name: "رَفعة ميتة (Deadlift)", sets: "4 مجموعات × 6-8 تكرارات", rest: 120 },
+                    { name: "سحب أرضي بالبار (Barbell Row)", sets: "3 مجموعات × 8-10 تكرارات", rest: 90 },
+                    { name: "سحب أمامي بالكابل (Lat Pulldown)", sets: "3 مجموعات × 10-12 تكرار", rest: 60 },
+                    { name: "تجديف بالدمبل (Dumbbell Row)", sets: "3 مجموعات × 10-12 تكرار", rest: 60 },
+                    { name: "بايسبس بالبار (Barbell Curl)", sets: "3 مجموعات × 10-12 تكرار", rest: 45 },
+                    { name: "فخذ خلفي: ثني الساق (Leg Curl)", sets: "3 مجموعات × 12-15 تكرار", rest: 60 },
+                    { name: "بطن: بلانك جانبي (Side Plank)", sets: "3 مجموعات × 30 ثانية لكل جهة", rest: 45 }
+                ]
+            },
+            3: {
+                calisthenics: [
+                    { name: "ضغط ألماسي (Diamond Push-ups)", sets: "3 مجموعات × 8-10 تكرارات", rest: 60 },
+                    { name: "ضغط واسع (Wide Push-ups)", sets: "3 مجموعات × 10 تكرارات", rest: 60 },
+                    { name: "سكوَات بقفز (Jump Squats)", sets: "3 مجموعات × 10 تكرارات", rest: 60 },
+                    { name: "رفع ساق معلق (Hanging Leg Raise)", sets: "3 مجموعات × 10 تكرارات", rest: 45 }
+                ],
+                gym: [
+                    { name: "رَفعة ميتة رومانية (RDL)", sets: "3 مجموعات × 10 تكرارات", rest: 90 },
+                    { name: "بنش مائل بالدمبل (Incline Dumbbell Press)", sets: "3 مجموعات × 10-12 تكرار", rest: 60 },
+                    { name: "رفرفة خلفية (Reverse Fly)", sets: "3 مجموعات × 12 تكرار", rest: 60 },
+                    { name: "سمانة واقف (Calf Raise)", sets: "4 مجموعات × 15 تكرار", rest: 45 },
+                    { name: "بطن بالكابل (Cable Crunch)", sets: "3 مجموعات × 15 تكرار", rest: 45 }
+                ]
+            }
+        };
+
+        let countdown;
+
+        function switchDay(dayNum) {
+            document.querySelectorAll('.day-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx + 1 === dayNum);
+            });
+
+            const day = workoutData[dayNum];
+            let html = `<div class="section-title">أ) كاليسثينكس وإحماء</div>`;
+            day.calisthenics.forEach(ex => html += createExerciseCard(ex));
+
+            html += `<div class="section-title">ب) حديد - الجزء الأساسي</div>`;
+            day.gym.forEach(ex => html += createExerciseCard(ex));
+
+            document.getElementById('workout-content').innerHTML = html;
+        }
+
+        function createExerciseCard(ex) {
+            return `
+                <div class="exercise-card">
+                    <div class="exercise-name">🏋️‍♂️ ${ex.name}</div>
+                    <div class="exercise-details">التكرارات: ${ex.sets} | راحة مقترحة: ${ex.rest} ثانية</div>
+                    <div class="timer-box">
+                        <span>ابدأ مؤقت الراحة (${ex.rest}ث)</span>
+                        <button class="btn-timer" onclick="startTimer(${ex.rest})">بدء الراحة</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function startTimer(seconds) {
+            clearInterval(countdown);
+            const timerBox = document.getElementById('global-timer');
+            const display = document.getElementById('timer-display');
+            timerBox.style.display = 'block';
+
+            let timeLeft = seconds;
+            updateDisplay(timeLeft);
+
+            countdown = setInterval(() => {
+                timeLeft--;
+                updateDisplay(timeLeft);
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    timerBox.style.display = 'none';
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]); // اهتزاز تنبيهي عند انتهاء الوقت
+                    alert('انتهت فترة الراحة! ابدأ المجموعة التالية.');
+                }
+            }, 1000);
+        }
+
+        function updateDisplay(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            document.getElementById('timer-display').textContent = 
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function stopTimer() {
+            clearInterval(countdown);
+            document.getElementById('global-timer').style.display = 'none';
+        }
+
+        // تشغيل اليوم الأول افتراضياً عند فتح التطبيق
+        switchDay(1);
+    </script>
+</body>
+</html>
