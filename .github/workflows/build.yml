@@ -1,0 +1,31 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Build Web to APK (PWA/Bubblewrap) or setup environment
+        run: |
+          echo "Preparing environment for APK generation..."
+          mkdir -p output
+
+      - name: Create Dummy APK artifact for testing
+        run: |
+          echo "Workout App APK Generator" > output/workout-app.txt
+          # ملاحظة: يمكنك لاحقاً استخدام أدوات مثل Cordova أو PWABuilder لتوليد ملف APK الفعلي من رابط موقعك على GitHub Pages.
